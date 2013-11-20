@@ -30,26 +30,25 @@ void loop() {
   delay(5000);
 }
 
-static inline void shift_bit(uint8_t value) {
-  digitalWrite(DATA, value);
-  digitalWrite(W_CLK, HIGH);
-  delay(1);
-  digitalWrite(W_CLK, LOW);
-}
-
 void dds(unsigned long frequency, bool power_down, uint8_t phase) {
   // Make sure we start with the clock low
   digitalWrite(W_CLK, LOW);
   digitalWrite(FQ_UD, LOW);  
   
-  for (int i = 0; i < 32; i++) {
-    shift_bit(frequency & 1);
-    frequency = frequency >> 1;
+  // Output the 4 bytes with frequency info
+  for (int i = 0; i < 4; i++) {
+    shiftOut(DATA, W_CLK, LSBFIRST, frequency & 0xff);
+    frequency = frequency >> 8;
   }
   // send 0 for w32/w33, powerdown and phase.
-  for (int i = 0; i < 8; i++) {
-    shift_bit(0);
+  uint8_t command = phase << 3;
+  if (power_down) {
+    // Turn on the power_down bit if required
+    phase |= 4;
   }
+  shiftOut(DATA, W_CLK, LSBFIRST, command);
+ 
+  // Pulse FQ_UD to load the new data.
   digitalWrite(FQ_UD, HIGH);
   delay(1);
   digitalWrite(FQ_UD, LOW);  
