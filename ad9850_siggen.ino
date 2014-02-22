@@ -13,8 +13,8 @@ void setup() {
 }
 
 
-// we keep the freq in khz
-uint32_t frequency = 20000000;
+// we keep the freq in Hz
+uint32_t frequency = 10000000;
 
 void loop() {
   // deltaphase = frequency * 2^32 / 125 * 10^3 (quartz freq in khz)
@@ -36,6 +36,21 @@ void loop() {
     frequency += 5000;
   if (c == 'J')
     frequency -= 5000;
+
+  if (c >= '0' && c <= '9') {
+    Serial.print("Enter frequency in Hz: ");
+    Serial.print(c - '0');
+    frequency = c - '0';
+    while (c != '\n') {
+      c = Serial.read();
+      if (c >= '0' && c <= '9') {
+        Serial.print(c - '0');
+        frequency *= 10;
+        frequency += c - '0';
+      }
+    }
+    Serial.println();
+  }
 }
 
 void dds(unsigned long frequency, bool power_down, uint8_t phase) {
