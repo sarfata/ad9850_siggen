@@ -12,29 +12,37 @@ void setup() {
   pinMode(DATA, OUTPUT);
 }
 
+
+// we keep the freq in khz
+uint32_t frequency = 20000000;
+
 void loop() {
-  Serial.println("1kHz");
-  dds(34360, false, 0);
-  delay(5000);
+  // deltaphase = frequency * 2^32 / 125 * 10^3 (quartz freq in khz)
+  dds(34.359738368 * frequency, false, 0);
 
-  Serial.println("3 kHz");
-  dds(103079ul, false, 0);
-  delay(5000);
+  Serial.print("Frequency: ");
+  Serial.print(frequency);
+  Serial.println(" Hz");
 
-  Serial.println("1 MHz");
-  dds(34359700, false, 0);
-  delay(5000);
-
-  Serial.println("10 MHz");
-  dds(343597000, false, 0);
-  delay(5000);
+  while (Serial.peek() == -1) {
+    delay(50);
+  }
+  int c = Serial.read();
+  if (c == 'k')
+    frequency += 50;
+  if (c == 'j')
+    frequency -= 50;
+  if (c == 'K')
+    frequency += 5000;
+  if (c == 'J')
+    frequency -= 5000;
 }
 
 void dds(unsigned long frequency, bool power_down, uint8_t phase) {
   // Make sure we start with the clock low
   digitalWrite(W_CLK, LOW);
-  digitalWrite(FQ_UD, LOW);  
-  
+  digitalWrite(FQ_UD, LOW);
+
   // Output the 4 bytes with frequency info
   for (int i = 0; i < 4; i++) {
     shiftOut(DATA, W_CLK, LSBFIRST, frequency & 0xff);
@@ -47,9 +55,9 @@ void dds(unsigned long frequency, bool power_down, uint8_t phase) {
     phase |= 4;
   }
   shiftOut(DATA, W_CLK, LSBFIRST, command);
- 
+
   // Pulse FQ_UD to load the new data.
   digitalWrite(FQ_UD, HIGH);
   delay(1);
-  digitalWrite(FQ_UD, LOW);  
+  digitalWrite(FQ_UD, LOW);
 }
